@@ -18,4 +18,14 @@ def domino_paving(n: int) -> int:
     """
     a = 0
     # BEGIN SOLUTION
+    assert n > 0, "n must be strictly positive"
+    if n % 2 != 0:
+        return 0
+    values = [0, 1, 3]
+    while len(values) <= n:
+        if len(values) % 2 == 0:
+            values.append(values[-2] + 2 * values[-1])
+        else:
+            values.append(values[-2] + values[-1])
+    return values[n]
     # END SOLUTION

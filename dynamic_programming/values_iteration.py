@@ -26,6 +26,20 @@ def mdp_value_iteration(mdp: MDP, max_iter: int = 1000, gamma=1.0) -> np.ndarray
     """
     values = np.zeros(mdp.observation_space.n)
     # BEGIN SOLUTION
+    for _ in range(max_iter):
+        values_next = np.full_like(values, float("-inf"))
+        for state in range(mdp.observation_space.n):
+            for action in range(mdp.action_space.n):
+                mdp.reset_state(state)
+                next_state, reward, done, _ = mdp.step(action)
+                if done:
+                    value = reward
+                else:
+                    value = reward + gamma * values[next_state]
+                values_next[state] = max(values_next[state], value)
+        if np.allclose(values, values_next):
+            break
+        values = values_next
     # END SOLUTION
     return values
 
@@ -41,7 +55,31 @@ def grid_world_value_iteration(
     theta est le seuil de convergence (différence maximale entre deux itérations).
     """
     values = np.zeros((4, 4))
+
     # BEGIN SOLUTION
+    def positions(height, width):
+        for row in range(height):
+            for col in range(width):
+                yield (row, col)
+
+    for _ in range(max_iter):
+        values_next = values.copy()
+        for state in positions(env.height, env.width):
+            if np.all(env.moving_prob[state] == 0):
+                continue
+            values_next[state] = float("-inf")
+            for action in range(env.action_space.n):
+                env.set_state(*state)
+                next_state, reward, done, _ = env.step(action)
+                if done:
+                    value = reward
+                else:
+                    value = reward + gamma * values[next_state]
+                values_next[state] = max(values_next[state], value)
+        if np.allclose(values, values_next, atol=theta):
+            break
+        values = values_next
+    return values
     # END SOLUTION
 
 
@@ -71,4 +109,23 @@ def stochastic_grid_world_value_iteration(
     theta: float = 1e-5,
 ) -> np.ndarray:
     values = np.zeros((4, 4))
+
     # BEGIN SOLUTION
+    def positions(height, width):
+        for row in range(height):
+            for col in range(width):
+                yield (row, col)
+
+    for _ in range(max_iter):
+        values_next = values.copy()
+        delta = np.zeros_like(values)
+        for row, col in positions(env.height, env.width):
+            env.set_state(row, col)
+            delta[row, col] = value_iteration_per_state(
+                env, values_next, gamma, values, theta
+            )
+        if np.all(delta < theta):
+            break
+        values = values_next
+    return values
+    # END SOLUTION
